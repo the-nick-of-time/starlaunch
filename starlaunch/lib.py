@@ -7,6 +7,10 @@ class NoBaseDir(Exception):
     pass
 
 
+class NoName(Exception):
+    pass
+
+
 class ApplicationSettings:
     def __init__(self, file: Path):
         self.file = file
@@ -48,7 +52,9 @@ class Instance:
 
     @property
     def name(self) -> str:
-        return self.data.get('name', 'Starbound')
+        if 'name' in self.data:
+            return self.data['name']
+        raise NoName('Instance must have a name')
 
     def write(self):
         with self.file.open('w') as f:
