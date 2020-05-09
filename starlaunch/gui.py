@@ -1,15 +1,29 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
-from typing import Callable
+from typing import Callable, Optional
 
 import lib
 
 
 class Application:
-    def __init__(self):
+    def __init__(self, model: lib.Application):
         self.window = tk.Tk()
         self.window.title('StarLaunch')
+        self.model = model
+        self.instancesWrapper = ttk.Frame(self.window)
+        self.instances = [InstanceView(self.instancesWrapper, inst, self.launch) for inst in
+                          self.model.instances]
+        self.menu = SettingsMenu(self.window, self.model.settings)
+        self.window.config(menu=self.menu.menubar)
+        self.newButton = ttk.Button(self.window, text='New', command=self.new)
+        self.__draw()
+
+    def __draw(self):
+        for i, inst in enumerate(self.instances):
+            inst.grid(i, 0)
+        self.instancesWrapper.grid(row=0, column=0)
+        self.newButton.grid(row=1, column=0, sticky='nsew')
 
     def run(self):
         self.window.mainloop()
@@ -20,6 +34,14 @@ class Application:
     def show(self):
         self.window.deiconify()
 
+    def new(self):
+        def make_new(inst):
+            view = InstanceView(self.window, inst, self.launch)
+            self.instances.append(view)
+            view.grid(len(self.instances), 0)
+
+        InstanceEdit(None, make_new)
+
     def launch(self, instance: lib.Instance):
         self.hide()
         try:
@@ -27,13 +49,17 @@ class Application:
         finally:
             self.show()
 
+    def quit(self):
+        self.model.write()
+        self.window.destroy()
+
 
 class Section:
     def __init__(self, container, **kwargs):
         self.f = tk.Frame(container, **kwargs)
 
-    def grid(self, row, column):
-        self.f.grid(row=row, column=column)
+    def grid(self, row, column, **opts):
+        self.f.grid(row=row, column=column, **opts)
 
 
 class LabeledEntry(Section):
@@ -108,8 +134,8 @@ class InstanceView(Section):
         self.__draw()
 
     def __draw(self):
-        self.launch.grid(row=0, column=0)
-        self.edit.grid(row=0, column=1)
+        self.launch.grid(row=0, column=0, sticky='nsew')
+        self.edit.grid(row=0, column=1, sticky='e')
 
     def launch_game(self):
         self.launch_command(self.instance)
@@ -119,13 +145,12 @@ class InstanceView(Section):
 
 
 class InstanceEdit:
-    def __init__(self, instance: lib.Instance, callback: Callable[[lib.Instance], None]):
+    def __init__(self, instance: Optional[lib.Instance],
+                 callback: Callable[[lib.Instance], None]):
         self.callback = callback
         self.window = tk.Toplevel()
         self.instance = instance
         self.name = LabeledEntry(self.window, 'Instance name')
-        # instead do radiobutton: instance/main/custom
-        # also custom will have a file selector
         self.storage = PathSelector(self.window, 'Storage location', 'storage')
         self.mods = PathSelector(self.window, 'Mods location', 'mods')
         self.__draw()
@@ -147,3 +172,23 @@ class InstanceEdit:
         self.instance.name = self.name.value
         self.callback(self.instance)
         self.window.destroy()
+
+
+class SettingsMenu:
+    def __init__(self, window, settings: lib.ApplicationSettings):
+        self.menubar = tk.Menu(window)
+        self.menu = tk.Menu(self.menubar, tearoff=False)
+        self.settings = settings
+        self.menu.add_command(label='Set Starbound directory',
+                              command=lambda: self.select_directory(self.settings.starbound_dir,
+                                                                    'starbound_dir'))
+        self.menu.add_command(label='Set instances root directory',
+                              command=lambda: self.select_directory(self.settings.instances_dir,
+                                                                    'instances_dir'))
+        self.menubar.add_cascade(menu=self.menu, label='Settings')
+
+    def select_directory(self, starting, field: str):
+        # TODO: properties might not be the best way...
+        directory = filedialog.askdirectory(initialdir=starting)
+        prop = getattr(self.settings, field)
+        prop.fset(directory)

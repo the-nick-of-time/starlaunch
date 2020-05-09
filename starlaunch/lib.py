@@ -1,8 +1,10 @@
 import json
+import platform
 import re
 import subprocess
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import List
 
 
 class NoBaseDir(Exception):
@@ -25,19 +27,19 @@ class ApplicationSettings:
 
     @property
     def starbound_dir(self) -> Path:
-        if 'starbound_dir' in self.data:
-            directory = Path(self.data['starbound_dir'])
-            if directory.is_dir():
-                return directory
-        raise NoBaseDir('No or invalid base directory set')
+        if 'starbound_dir' not in self.data:
+            self.data['starbound_dir'] = str(Path.home() / 'games/starbound/starbound')
+        directory = Path(self.data['starbound_dir'])
+        if directory.is_dir():
+            return directory
 
     @property
     def instances_dir(self) -> Path:
-        if 'instances_dir' in self.data:
-            directory = Path(self.data['instances_dir'])
-            if directory.is_dir():
-                return directory
-        raise NoInstancesDir('No or invalid instances directory set')
+        if 'instances_dir' not in self.data:
+            self.data['instances_dir'] = str(Path.home() / 'games/starbound/instances')
+        directory = Path(self.data['instances_dir'])
+        if directory.is_dir():
+            return directory
 
     def write(self):
         with self.file.open('w') as f:
@@ -78,7 +80,7 @@ class Instance:
     def name(self) -> str:
         if 'name' in self.data:
             return self.data['name']
-        raise NoName('Instance must have a name')
+        return 'Starbound'
 
     @name.setter
     def name(self, value: str):
@@ -117,3 +119,44 @@ def make_path(path: str, sourcedir: Path, instancedir: Path) -> Path:
         return instancedir / path[5:]
     raise ValueError('Invalid path given, must be absolute or relative to starbound (sb:) or '
                      'instance (inst:) directory')
+
+
+class Application:
+    def __init__(self):
+        self.configfile = config_file()
+        if not self.configfile.exists():
+            create_file(self.configfile)
+        self.settings = ApplicationSettings(self.configfile)
+        self.instances = read_instances(self.settings.instances_dir, self.settings)
+
+    @staticmethod
+    def launch(instance: Instance):
+        instance.launch()
+
+    def write(self):
+        self.settings.write()
+        for inst in self.instances:
+            inst.write()
+
+
+def read_instances(instanceroot: Path, settings: ApplicationSettings) -> List[Instance]:
+    instances = []
+    for instance in instanceroot.iterdir():
+        if not instance.is_dir():
+            continue
+        instance_file = instance / 'instance.json'
+        if not instance_file.exists():
+            continue
+        instances.append(Instance(instance_file, settings))
+    return instances
+
+
+def config_file() -> Path:
+    if platform.system() == 'Windows':
+        return Path.home() / 'AppData/Roaming/starlaunch/settings.json'
+    return Path.home() / '.config/starlaunch/settings.json'
+
+
+def create_file(file: Path):
+    file.parent.mkdir(parents=True, exist_ok=True)
+    file.write_text('{}')
