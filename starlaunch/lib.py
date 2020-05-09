@@ -59,6 +59,10 @@ class Instance:
                              self.location)
         return self.location / 'storage'
 
+    @storage.setter
+    def storage(self, value: Path):
+        self.data['storage'] = str(value)
+
     @property
     def mods(self) -> Path:
         if 'mods' in self.data:
@@ -66,11 +70,19 @@ class Instance:
                              self.location)
         return self.location / 'mods'
 
+    @mods.setter
+    def mods(self, value: Path):
+        self.data['mods'] = str(value)
+
     @property
     def name(self) -> str:
         if 'name' in self.data:
             return self.data['name']
         raise NoName('Instance must have a name')
+
+    @name.setter
+    def name(self, value: str):
+        self.data['name'] = value
 
     def write(self):
         with self.file.open('w') as f:
