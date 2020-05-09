@@ -1,7 +1,7 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
-from typing import Callable, Optional
+from typing import Callable
 
 import lib
 
@@ -10,6 +10,7 @@ class Application:
     def __init__(self, model: lib.Application):
         self.window = tk.Tk()
         self.window.title('StarLaunch')
+        self.window.wm_protocol('WM_DELETE_WINDOW', self.quit)
         self.model = model
         self.instancesWrapper = ttk.Frame(self.window)
         self.instances = [InstanceView(self.instancesWrapper, inst, self.launch) for inst in
@@ -35,12 +36,13 @@ class Application:
         self.window.deiconify()
 
     def new(self):
-        def make_new(inst):
-            view = InstanceView(self.window, inst, self.launch)
-            self.instances.append(view)
-            view.grid(len(self.instances), 0)
-
-        InstanceEdit(None, make_new)
+        # def make_new(inst):
+        #     view = InstanceView(self.window, inst, self.launch)
+        #     self.instances.append(view)
+        #     view.grid(len(self.instances), 0)
+        # fresh = lib.Instance()
+        # InstanceEdit(None, make_new)
+        pass
 
     def launch(self, instance: lib.Instance):
         self.hide()
@@ -71,7 +73,7 @@ class LabeledEntry(Section):
 
     def __draw(self):
         self.label.grid(row=0, column=0)
-        self.label.grid(row=0, column=1)
+        self.entry.grid(row=0, column=1)
 
     @property
     def value(self):
@@ -86,7 +88,7 @@ class LabeledEntry(Section):
 class PathSelector(Section):
     def __init__(self, container, label: str, suffix: str, **kwargs):
         super().__init__(container, **kwargs)
-        self.var = tk.StringVar(value='inst:')
+        self.var = tk.StringVar(value='inst:' + suffix)
         self.label = ttk.Label(self.f, text=label)
         self.instance = ttk.Radiobutton(self.f, text='Instance', variable=self.var,
                                         value='inst:' + suffix, command=self.hide_custom)
@@ -96,12 +98,13 @@ class PathSelector(Section):
                                       value='custom', command=self.show_custom)
         self.browser = ttk.Button(self.f, text='Select location...', command=self.ask_directory)
         self.suffix = suffix
+        self.__draw()
 
     def __draw(self):
         self.label.grid(row=0, column=0)
-        self.instance.grid(row=1, column=0)
-        self.main.grid(row=2, column=0)
-        self.custom.grid(row=3, column=0)
+        self.instance.grid(row=1, column=0, sticky='w')
+        self.main.grid(row=2, column=0, sticky='w')
+        self.custom.grid(row=3, column=0, sticky='w')
 
     def ask_directory(self):
         directory = filedialog.askdirectory()
@@ -109,7 +112,7 @@ class PathSelector(Section):
         self.var.set(directory)
 
     def show_custom(self):
-        self.browser.grid(row=3, column=0)
+        self.browser.grid(row=4, column=0)
 
     def hide_custom(self):
         self.browser.grid_remove()
@@ -130,7 +133,7 @@ class InstanceView(Section):
         self.instance = instance
         self.launch_command = launch
         self.launch = ttk.Button(self.f, text=self.instance.name, command=self.launch_game)
-        self.edit = ttk.Button(self.f, text='✎', command=self.edit_instance)
+        self.edit = ttk.Button(self.f, text='✎', command=self.edit_instance, width=2)
         self.__draw()
 
     def __draw(self):
@@ -141,14 +144,18 @@ class InstanceView(Section):
         self.launch_command(self.instance)
 
     def edit_instance(self):
-        pass
+        def update():
+            self.launch['text'] = self.instance.name
+
+        InstanceEdit(self.instance, lambda i: update())
 
 
 class InstanceEdit:
-    def __init__(self, instance: Optional[lib.Instance],
+    def __init__(self, instance: lib.Instance,
                  callback: Callable[[lib.Instance], None]):
         self.callback = callback
         self.window = tk.Toplevel()
+        self.window.wm_protocol('WM_DELETE_WINDOW', self.save)
         self.instance = instance
         self.name = LabeledEntry(self.window, 'Instance name')
         self.storage = PathSelector(self.window, 'Storage location', 'storage')
@@ -156,10 +163,7 @@ class InstanceEdit:
         self.__draw()
 
     def __draw(self):
-        try:
-            self.name.value = self.instance.name
-        except lib.NoName:
-            self.name.value = 'Starbound'
+        self.name.value = self.instance.name
         self.name.grid(0, 0)
         self.storage.value = str(self.instance.storage)
         self.storage.grid(1, 0)
@@ -167,9 +171,9 @@ class InstanceEdit:
         self.mods.grid(2, 0)
 
     def save(self):
-        self.instance.storage = self.storage.value
-        self.instance.mods = self.mods.value
-        self.instance.name = self.name.value
+        self.instance.set_storage(self.storage.value)
+        self.instance.set_mods(self.mods.value)
+        self.instance.set_name(self.name.value)
         self.callback(self.instance)
         self.window.destroy()
 
@@ -181,14 +185,12 @@ class SettingsMenu:
         self.settings = settings
         self.menu.add_command(label='Set Starbound directory',
                               command=lambda: self.select_directory(self.settings.starbound_dir,
-                                                                    'starbound_dir'))
+                                                                    self.settings.set_starbound_dir))
         self.menu.add_command(label='Set instances root directory',
                               command=lambda: self.select_directory(self.settings.instances_dir,
-                                                                    'instances_dir'))
+                                                                    self.settings.set_instances_dir))
         self.menubar.add_cascade(menu=self.menu, label='Settings')
 
-    def select_directory(self, starting, field: str):
-        # TODO: properties might not be the best way...
+    def select_directory(self, starting, setter: Callable[[str], None]):
         directory = filedialog.askdirectory(initialdir=starting)
-        prop = getattr(self.settings, field)
-        prop.fset(directory)
+        setter(directory)

@@ -1,22 +1,11 @@
 import json
+import os
 import platform
 import re
 import subprocess
 from pathlib import Path
-from tempfile import NamedTemporaryFile
+from tempfile import TemporaryDirectory
 from typing import List
-
-
-class NoBaseDir(Exception):
-    pass
-
-
-class NoName(Exception):
-    pass
-
-
-class NoInstancesDir(Exception):
-    pass
 
 
 class ApplicationSettings:
@@ -33,6 +22,9 @@ class ApplicationSettings:
         if directory.is_dir():
             return directory
 
+    def set_starbound_dir(self, value):
+        self.data['starbound_dir'] = value
+
     @property
     def instances_dir(self) -> Path:
         if 'instances_dir' not in self.data:
@@ -40,6 +32,9 @@ class ApplicationSettings:
         directory = Path(self.data['instances_dir'])
         if directory.is_dir():
             return directory
+
+    def set_instances_dir(self, value):
+        self.data['instances_dir'] = value
 
     def write(self):
         with self.file.open('w') as f:
@@ -61,8 +56,7 @@ class Instance:
                              self.location)
         return self.location / 'storage'
 
-    @storage.setter
-    def storage(self, value: Path):
+    def set_storage(self, value: Path):
         self.data['storage'] = str(value)
 
     @property
@@ -72,8 +66,7 @@ class Instance:
                              self.location)
         return self.location / 'mods'
 
-    @mods.setter
-    def mods(self, value: Path):
+    def set_mods(self, value: Path):
         self.data['mods'] = str(value)
 
     @property
@@ -82,30 +75,43 @@ class Instance:
             return self.data['name']
         return 'Starbound'
 
-    @name.setter
-    def name(self, value: str):
+    def set_name(self, value: str):
         self.data['name'] = value
 
     def write(self):
         with self.file.open('w') as f:
             json.dump(self.data, f, indent=2)
 
-    def config_file_contents(self) -> dict:
+    def config_file_contents(self, tempdir: str) -> dict:
         return {
             "assetDirectories": [
                 str(self.applicationSettings.starbound_dir / '../assets'),
-                str(self.mods)
+                str(self.mods),
+                tempdir
             ],
             "storageDirectory": str(self.storage)
         }
 
+    def patch_file_contents(self) -> dict:
+        return {
+            "op": "replace",
+            "path": "/windowTitle",
+            "value": self.name
+        }
+
     def launch(self):
         starbound = self.applicationSettings.starbound_dir / 'starbound'
-        # TODO: .autopatch file to change window name
-        # { "op": "replace", "path": "/windowTitle", "value": self.name }
-        with NamedTemporaryFile(mode='w+', encoding='utf8') as config:
-            json.dump(self.config_file_contents(), config)
-            subprocess.run([starbound, '-bootconfig', config.name])
+        libs = (f"{os.environ.get('LD_LIBRARY_PATH', '')}:"
+                f"{self.applicationSettings.starbound_dir}")
+        env = {'LD_LIBRARY_PATH': libs}
+        with TemporaryDirectory() as dirname:
+            configname = f"{dirname}/sbinit.config"
+            with open(configname, 'w') as config, open(f'{dirname}/.autopatch', 'w') as patch:
+                json.dump(self.config_file_contents(dirname), config, indent=2)
+                json.dump(self.patch_file_contents(), patch)
+            complete = subprocess.run([starbound, '-bootconfig', configname], env=env,
+                                      cwd=str(self.applicationSettings.starbound_dir))
+            print(complete.args)
 
 
 def make_path(path: str, sourcedir: Path, instancedir: Path) -> Path:
