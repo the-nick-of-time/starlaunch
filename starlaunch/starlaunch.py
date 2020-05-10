@@ -1,7 +1,13 @@
 import sys
 
-import gui
-import lib
+from starlaunch import gui, lib
+
+
+def main():
+    if len(sys.argv) > 1:
+        cli_run()
+    else:
+        gui_run()
 
 
 def gui_run():
@@ -22,7 +28,4 @@ def cli_run():
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        cli_run()
-    else:
-        gui_run()
+    main()
