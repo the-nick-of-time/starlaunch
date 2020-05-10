@@ -111,9 +111,8 @@ class Instance:
             (Path(dirname) / 'assets').mkdir()
             with (Path(dirname) / 'assets/client.config.patch').open('w') as patch:
                 json.dump(self.patch_file_contents(), patch)
-            complete = subprocess.run([starbound, '-bootconfig', configname], env=env,
-                                      cwd=str(self.applicationSettings.starbound_dir))
-            print(complete.args)
+            subprocess.run([starbound, '-bootconfig', configname], env=env,
+                           cwd=str(self.applicationSettings.starbound_dir))
 
 
 def make_path(path: str, sourcedir: Path, instancedir: Path) -> Path:

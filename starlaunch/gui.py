@@ -40,7 +40,7 @@ class Application:
         def make_new(inst):
             view = InstanceView(self.instancesWrapper, inst, self.launch)
             self.instances.append(view)
-            view.grid(len(self.instances), 0)
+            view.grid(len(self.instances), 0, sticky='nsew')
 
         InstanceEdit(None, make_new, self.model.settings)
 
@@ -82,7 +82,6 @@ class LabeledEntry(Section):
     @value.setter
     def value(self, new: str):
         self.entry.delete(0, 'end')
-        print(new)
         self.entry.insert(0, new)
 
 
