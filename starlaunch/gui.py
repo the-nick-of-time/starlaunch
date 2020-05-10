@@ -1,7 +1,8 @@
+import json
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
-from typing import Callable
+from typing import Callable, Optional
 
 import lib
 
@@ -22,7 +23,7 @@ class Application:
 
     def __draw(self):
         for i, inst in enumerate(self.instances):
-            inst.grid(i, 0)
+            inst.grid(i, 0, sticky='ew')
         self.instancesWrapper.grid(row=0, column=0)
         self.newButton.grid(row=1, column=0, sticky='nsew')
 
@@ -36,13 +37,12 @@ class Application:
         self.window.deiconify()
 
     def new(self):
-        # def make_new(inst):
-        #     view = InstanceView(self.window, inst, self.launch)
-        #     self.instances.append(view)
-        #     view.grid(len(self.instances), 0)
-        # fresh = lib.Instance()
-        # InstanceEdit(None, make_new)
-        pass
+        def make_new(inst):
+            view = InstanceView(self.instancesWrapper, inst, self.launch)
+            self.instances.append(view)
+            view.grid(len(self.instances), 0)
+
+        InstanceEdit(None, make_new, self.model.settings)
 
     def launch(self, instance: lib.Instance):
         self.hide()
@@ -82,6 +82,7 @@ class LabeledEntry(Section):
     @value.setter
     def value(self, new: str):
         self.entry.delete(0, 'end')
+        print(new)
         self.entry.insert(0, new)
 
 
@@ -151,29 +152,62 @@ class InstanceView(Section):
 
 
 class InstanceEdit:
-    def __init__(self, instance: lib.Instance,
-                 callback: Callable[[lib.Instance], None]):
+    def __init__(self, instance: Optional[lib.Instance],
+                 callback: Callable[[lib.Instance], None],
+                 settings: lib.ApplicationSettings = None):
         self.callback = callback
         self.window = tk.Toplevel()
         self.window.wm_protocol('WM_DELETE_WINDOW', self.save)
         self.instance = instance
+        if settings is None and instance is not None:
+            self.settings = instance.applicationSettings
+        else:
+            self.settings = settings
         self.name = LabeledEntry(self.window, 'Instance name')
         self.storage = PathSelector(self.window, 'Storage location', 'storage')
         self.mods = PathSelector(self.window, 'Mods location', 'mods')
         self.__draw()
 
     def __draw(self):
-        self.name.value = self.instance.name
+        try:
+            self.name.value = self.instance.name
+        except AttributeError:
+            self.name.value = 'Starbound'
         self.name.grid(0, 0)
-        self.storage.value = str(self.instance.storage)
+        try:
+            self.storage.value = str(self.instance.storage)
+        except AttributeError:
+            self.storage.value = 'inst:storage'
         self.storage.grid(1, 0)
-        self.mods.value = str(self.instance.mods)
+        try:
+            self.mods.value = str(self.instance.mods)
+        except AttributeError:
+            self.mods.value = 'inst:mods'
         self.mods.grid(2, 0)
 
     def save(self):
-        self.instance.set_storage(self.storage.value)
-        self.instance.set_mods(self.mods.value)
-        self.instance.set_name(self.name.value)
+        if self.instance is not None:
+            self.instance.set_storage(self.storage.value)
+            self.instance.set_mods(self.mods.value)
+            self.instance.set_name(self.name.value)
+        else:
+            directory = self.settings.instances_dir / self.name.value
+            mods = directory / 'mods'
+            storage = directory / 'storage'
+            try:
+                directory.mkdir(exist_ok=False)
+            except FileExistsError:
+                raise FileExistsError('An instance with that name already exists')
+            mods.mkdir()
+            storage.mkdir()
+            instance = directory / 'instance.json'
+            with instance.open('w') as config:
+                json.dump({
+                    'name': self.name.value,
+                    'mods': self.mods.value,
+                    'storage': self.storage.value,
+                }, config)
+            self.instance = lib.Instance(instance, self.settings)
         self.callback(self.instance)
         self.window.destroy()
 
