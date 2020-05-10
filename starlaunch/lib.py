@@ -92,22 +92,24 @@ class Instance:
             "storageDirectory": str(self.storage)
         }
 
-    def patch_file_contents(self) -> dict:
-        return {
+    def patch_file_contents(self):
+        return [{
             "op": "replace",
             "path": "/windowTitle",
             "value": self.name
-        }
+        }]
 
     def launch(self):
         starbound = self.applicationSettings.starbound_dir / 'starbound'
         libs = (f"{os.environ.get('LD_LIBRARY_PATH', '')}:"
                 f"{self.applicationSettings.starbound_dir}")
-        env = {'LD_LIBRARY_PATH': libs}
+        env = {**os.environ, 'LD_LIBRARY_PATH': libs}
         with TemporaryDirectory() as dirname:
             configname = f"{dirname}/sbinit.config"
-            with open(configname, 'w') as config, open(f'{dirname}/.autopatch', 'w') as patch:
+            with open(configname, 'w') as config:
                 json.dump(self.config_file_contents(dirname), config, indent=2)
+            (Path(dirname) / 'assets').mkdir()
+            with (Path(dirname) / 'assets/client.config.patch').open('w') as patch:
                 json.dump(self.patch_file_contents(), patch)
             complete = subprocess.run([starbound, '-bootconfig', configname], env=env,
                                       cwd=str(self.applicationSettings.starbound_dir))
