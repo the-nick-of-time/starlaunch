@@ -18,10 +18,16 @@ def gui_run():
 
 def cli_run():
     model = lib.Application()
-    name = sys.argv[1]
+    name = sys.argv[-1]
+    server = False
+    if '--server' in sys.argv:
+        server = True
     for inst in model.instances:
         if inst.name == name:
-            inst.launch()
+            if server:
+                inst.launch_server()
+            else:
+                inst.launch()
             break
     else:
         sys.exit('Invalid instance named!')

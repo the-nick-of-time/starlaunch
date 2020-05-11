@@ -31,7 +31,7 @@ class Application:
         self.window.mainloop()
 
     def hide(self):
-        self.window.withdraw()
+        self.window.iconify()
 
     def show(self):
         self.window.deiconify()
@@ -199,6 +199,8 @@ class InstanceEdit:
                 raise FileExistsError('An instance with that name already exists')
             mods.mkdir()
             storage.mkdir()
+            (storage / 'player').mkdir()
+            (storage / 'universe').mkdir()
             instance = directory / 'instance.json'
             with instance.open('w') as config:
                 json.dump({

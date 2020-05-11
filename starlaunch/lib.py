@@ -114,6 +114,22 @@ class Instance:
             subprocess.run([starbound, '-bootconfig', configname], env=env,
                            cwd=str(self.applicationSettings.starbound_dir))
 
+    def launch_server(self):
+        starbound = self.applicationSettings.starbound_dir / 'starbound_server'
+        libs = (f"{os.environ.get('LD_LIBRARY_PATH', '')}:"
+                f"{self.applicationSettings.starbound_dir}")
+        env = {**os.environ, 'LD_LIBRARY_PATH': libs}
+        with TemporaryDirectory() as dirname:
+            configname = f"{dirname}/sbinit.config"
+            with open(configname, 'w') as config:
+                json.dump(self.config_file_contents(dirname), config, indent=2)
+            try:
+                subprocess.run([starbound, '-bootconfig', configname], env=env,
+                               cwd=str(self.applicationSettings.starbound_dir))
+            except KeyboardInterrupt:
+                # SIGINT gets passed to the process, stops it, and that's fine
+                pass
+
 
 def make_path(path: str, sourcedir: Path, instancedir: Path) -> Path:
     if re.match(r'^/|[A-Za-z]:', path):
