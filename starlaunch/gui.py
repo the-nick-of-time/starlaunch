@@ -14,8 +14,9 @@ class Application:
         self.window.wm_protocol('WM_DELETE_WINDOW', self.quit)
         self.model = model
         self.instancesWrapper = ttk.Frame(self.window)
-        self.instances = [InstanceView(self.instancesWrapper, inst, self.launch) for inst in
-                          self.model.instances]
+        self.instances = [InstanceView(self.window, self.instancesWrapper, inst, self.launch,
+                                       lambda i: self.launch(i, True))
+                          for inst in self.model.instances]
         self.menu = SettingsMenu(self.window, self.model.settings)
         self.window.config(menu=self.menu.menubar)
         self.newButton = ttk.Button(self.window, text='New', command=self.new)
@@ -31,23 +32,27 @@ class Application:
         self.window.mainloop()
 
     def hide(self):
-        self.window.iconify()
+        self.window.withdraw()
 
     def show(self):
         self.window.deiconify()
 
     def new(self):
         def make_new(inst):
-            view = InstanceView(self.instancesWrapper, inst, self.launch)
+            view = InstanceView(self.window, self.instancesWrapper, inst, self.launch,
+                                lambda i: self.launch(i, True))
             self.instances.append(view)
             view.grid(len(self.instances), 0, sticky='nsew')
 
-        InstanceEdit(None, make_new, self.model.settings)
+        InstanceEdit(self.window, None, make_new, self.model.settings)
 
-    def launch(self, instance: lib.Instance):
+    def launch(self, instance: lib.Instance, server=False):
         self.hide()
         try:
-            instance.launch()
+            if server:
+                instance.launch_server()
+            else:
+                instance.launch()
         finally:
             self.show()
 
@@ -127,35 +132,43 @@ class PathSelector(Section):
 
 
 class InstanceView(Section):
-    def __init__(self, container, instance: lib.Instance,
-                 launch: Callable[[lib.Instance], None], **kwargs):
+    def __init__(self, master, container, instance: lib.Instance,
+                 launch: Callable[[lib.Instance], None], server: Callable[[lib.Instance], None],
+                 **kwargs):
         super().__init__(container, **kwargs)
+        self.root = master
         self.instance = instance
         self.launch_command = launch
+        self.server_command = server
         self.launch = ttk.Button(self.f, text=self.instance.name, command=self.launch_game)
+        self.server = ttk.Button(self.f, text='Server', command=self.launch_server)
         self.edit = ttk.Button(self.f, text='✎', command=self.edit_instance, width=2)
         self.__draw()
 
     def __draw(self):
-        self.launch.grid(row=0, column=0, sticky='nsew')
-        self.edit.grid(row=0, column=1, sticky='e')
+        self.launch.grid(row=0, column=0, sticky='w')
+        self.server.grid(row=0, column=1, sticky='e')
+        self.edit.grid(row=0, column=2, sticky='e')
 
     def launch_game(self):
         self.launch_command(self.instance)
+
+    def launch_server(self):
+        self.server_command(self.instance)
 
     def edit_instance(self):
         def update():
             self.launch['text'] = self.instance.name
 
-        InstanceEdit(self.instance, lambda i: update())
+        InstanceEdit(self.root, self.instance, lambda i: update())
 
 
 class InstanceEdit:
-    def __init__(self, instance: Optional[lib.Instance],
+    def __init__(self, master, instance: Optional[lib.Instance],
                  callback: Callable[[lib.Instance], None],
                  settings: lib.ApplicationSettings = None):
         self.callback = callback
-        self.window = tk.Toplevel()
+        self.window = tk.Toplevel(master)
         self.window.wm_protocol('WM_DELETE_WINDOW', self.save)
         self.instance = instance
         if settings is None and instance is not None:
