@@ -57,7 +57,7 @@ class Instance:
         return self.location / 'storage'
 
     def set_storage(self, value: Path):
-        self.data['storage'] = str(value)
+        self.data['storage'] = self.make_path_relative(value)
 
     @property
     def mods(self) -> Path:
@@ -67,7 +67,7 @@ class Instance:
         return self.location / 'mods'
 
     def set_mods(self, value: Path):
-        self.data['mods'] = str(value)
+        self.data['mods'] = self.make_path_relative(value)
 
     @property
     def name(self) -> str:
@@ -77,6 +77,19 @@ class Instance:
 
     def set_name(self, value: str):
         self.data['name'] = value
+
+    def make_path_relative(self, path: Path) -> str:
+        try:
+            # instance-relative?
+            return 'inst:' + str(path.relative_to(self.location))
+        except ValueError:
+            pass
+        try:
+            # root installation-relative?
+            return 'sb:' + str(path.relative_to(self.applicationSettings.starbound_dir))
+        except ValueError:
+            # fall back on absolute
+            return str(path)
 
     def write(self):
         with self.file.open('w') as f:

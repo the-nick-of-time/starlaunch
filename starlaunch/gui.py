@@ -123,7 +123,7 @@ class PathSelector(Section):
         self.browser.grid_remove()
 
     @property
-    def value(self):
+    def value(self) -> str:
         return self.var.get()
 
     @value.setter
@@ -187,20 +187,23 @@ class InstanceEdit:
             self.name.value = 'Starbound'
         self.name.grid(0, 0)
         try:
-            self.storage.value = str(self.instance.storage)
+            self.storage.value = self.instance.make_path_relative(self.instance.storage)
         except AttributeError:
             self.storage.value = 'inst:storage'
         self.storage.grid(1, 0)
         try:
-            self.mods.value = str(self.instance.mods)
+            self.mods.value = self.instance.make_path_relative(self.instance.mods)
         except AttributeError:
             self.mods.value = 'inst:mods'
         self.mods.grid(2, 0)
 
     def save(self):
         if self.instance is not None:
-            self.instance.set_storage(self.storage.value)
-            self.instance.set_mods(self.mods.value)
+            self.instance.set_storage(
+                lib.make_path(self.storage.value, self.settings.starbound_dir,
+                              self.instance.location))
+            self.instance.set_mods(lib.make_path(self.mods.value, self.settings.starbound_dir,
+                                                 self.instance.location))
             self.instance.set_name(self.name.value)
         else:
             directory = self.settings.instances_dir / self.name.value
