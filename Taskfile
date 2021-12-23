@@ -17,7 +17,7 @@ function launch {
 
 function build {
 	: "Build a distributable executable from the program"
-	poetry run pyinstaller -F starlaunch/starlaunch.py
+	poetry run pyinstaller -F --paths=starlaunch starlaunch/starlaunch.py
 }
 
 function clean {
