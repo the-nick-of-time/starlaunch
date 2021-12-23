@@ -2,7 +2,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "starbound",
-    build_file = "//dependencies:starbound.BUILD",
+    build_file = "//:starbound.BUILD",
     sha256 = "9a571b799aa2d8be7f1d6c7fb20b3c8fe36e6cc58cab4e831cca64ae843144f4",
     strip_prefix = "starbound_1.4.4_linux",
     type = "zip",
