@@ -165,11 +165,15 @@ def make_path(path: str, sourcedir: Path, instancedir: Path) -> Path:
                      'instance (inst:) directory')
 
 
+class NeedsFirstTimeSetup(Exception):
+    pass
+
+
 class Application:
     def __init__(self):
         self.configfile = config_file()
         if not self.configfile.exists():
-            create_file(self.configfile)
+            raise NeedsFirstTimeSetup()
         self.settings = ApplicationSettings(self.configfile)
         self.instances = read_instances(self.settings.instances_dir, self.settings)
 
@@ -204,3 +208,12 @@ def config_file() -> Path:
 def create_file(file: Path):
     file.parent.mkdir(parents=True, exist_ok=True)
     file.write_text('{}')
+
+
+def first_time_setup(instances: str, starbound: str):
+    file = config_file()
+    configuration = json.dumps({
+        "instances_dir": instances,
+        "starbound_dir": starbound,
+    })
+    file.write_text(configuration)

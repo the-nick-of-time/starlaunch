@@ -245,3 +245,11 @@ class SettingsMenu:
     def select_directory(self, starting, setter: Callable[[str], None]):
         directory = filedialog.askdirectory(initialdir=starting)
         setter(directory)
+
+
+def first_time_setup():
+    win = tk.Tk()
+    starbound = filedialog.askdirectory(title="Directory containing starbound executable")
+    instances = filedialog.askdirectory(title="Directory to put instances in")
+    lib.first_time_setup(instances, starbound)
+    win.destroy()

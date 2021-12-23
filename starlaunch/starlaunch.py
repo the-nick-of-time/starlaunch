@@ -12,13 +12,23 @@ def main():
 
 
 def gui_run():
-    model = lib.Application()
+    try:
+        model = lib.Application()
+    except lib.NeedsFirstTimeSetup:
+        gui.first_time_setup()
+        model = lib.Application()
     app = gui.Application(model)
     app.run()
 
 
 def cli_run():
-    model = lib.Application()
+    try:
+        model = lib.Application()
+    except lib.NeedsFirstTimeSetup:
+        instances = input("Instances directory: ")
+        starbound = input("Directory containing starbound executable: ")
+        lib.first_time_setup(instances, starbound)
+        model = lib.Application()
     name = sys.argv[-1]
     server = False
     if '--server' in sys.argv:
