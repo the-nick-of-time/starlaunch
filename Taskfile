@@ -25,6 +25,17 @@ function clean {
 	git clean -xfd .
 }
 
+function wheel {
+	: "Build a wheel (and other formats) to distribute my python package"
+	poetry build
+}
+
+function publish {
+	: "Publish this package to PyPi"
+	wheel
+	poetry publish --username the-nick-of-time
+}
+
 ### /FUNCTIONS GO HERE
 
 function help {
