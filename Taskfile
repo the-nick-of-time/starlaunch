@@ -1,0 +1,30 @@
+#!/bin/bash
+# See https://github.com/adriancooney/Taskfile for examples
+
+# Sane error handling 
+set -o errexit -o pipefail
+
+### FUNCTIONS GO HERE
+function default {
+	: "Runs a default task"
+	launch "$@"
+}
+
+function launch {
+	: "Run the launcher"
+	poetry run python starlaunch/starlaunch.py "$@"
+}
+
+### /FUNCTIONS GO HERE
+
+function help {
+	: "Auto-generate list of tasks, including documentation in the form of these noop statements"
+	compgen -A function | while read -r name ; do
+		paste <(printf '%s' "${name}") <(type "$name" | grep -o '^[[:space:]]*:.*$')
+	done
+}
+if [[ $# -eq 0 ]] ; then
+	default
+else
+	"$@"
+fi
