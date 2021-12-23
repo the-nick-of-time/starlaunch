@@ -2,4 +2,5 @@
 /dist/
 __pycache__/
 *.egg-info/
-bazel-*
+/build/
+*.spec

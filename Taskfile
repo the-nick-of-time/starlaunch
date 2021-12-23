@@ -15,6 +15,16 @@ function launch {
 	poetry run python starlaunch/starlaunch.py "$@"
 }
 
+function build {
+	: "Build a distributable executable from the program"
+	poetry run pyinstaller -F starlaunch/starlaunch.py
+}
+
+function clean {
+	: "Removes ignored files to clean the working tree"
+	git clean -xfd .
+}
+
 ### /FUNCTIONS GO HERE
 
 function help {
