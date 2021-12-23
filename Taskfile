@@ -12,7 +12,7 @@ function default {
 
 function launch {
 	: "Run the launcher"
-	poetry run python starlaunch/starlaunch.py "$@"
+	poetry run starlaunch "$@"
 }
 
 function build {
