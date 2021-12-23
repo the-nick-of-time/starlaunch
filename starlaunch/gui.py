@@ -4,7 +4,7 @@ import tkinter.ttk as ttk
 from tkinter import filedialog
 from typing import Callable, Optional
 
-from starlaunch import lib
+import lib
 
 
 class Application:

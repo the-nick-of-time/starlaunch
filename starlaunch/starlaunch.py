@@ -1,6 +1,7 @@
 import sys
 
-from starlaunch import gui, lib
+import gui
+import lib
 
 
 def main():
