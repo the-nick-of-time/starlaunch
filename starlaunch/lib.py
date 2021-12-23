@@ -19,8 +19,12 @@ class ApplicationSettings:
         if 'starbound_dir' not in self.data:
             self.data['starbound_dir'] = str(Path.home() / 'games/starbound/starbound')
         directory = Path(self.data['starbound_dir'])
+        if not directory.exists():
+            directory.mkdir(parents=True)
         if directory.is_dir():
             return directory
+        else:
+            raise FileExistsError(f"{directory} exists but is not a directory")
 
     def set_starbound_dir(self, value):
         self.data['starbound_dir'] = value
@@ -30,8 +34,12 @@ class ApplicationSettings:
         if 'instances_dir' not in self.data:
             self.data['instances_dir'] = str(Path.home() / 'games/starbound/instances')
         directory = Path(self.data['instances_dir'])
+        if not directory.exists():
+            directory.mkdir(parents=True)
         if directory.is_dir():
             return directory
+        else:
+            raise FileExistsError(f"{directory} exists but is not a directory")
 
     def set_instances_dir(self, value):
         self.data['instances_dir'] = value
