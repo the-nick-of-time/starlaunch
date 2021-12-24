@@ -120,7 +120,7 @@ class Instance:
         }]
 
     def launch(self):
-        starbound = self.applicationSettings.starbound_dir / 'starbound'
+        starbound = exe(self.applicationSettings.starbound_dir / 'starbound')
         libs = (f"{os.environ.get('LD_LIBRARY_PATH', '')}:"
                 f"{self.applicationSettings.starbound_dir}")
         env = {**os.environ, 'LD_LIBRARY_PATH': libs}
@@ -135,7 +135,7 @@ class Instance:
                            cwd=str(self.applicationSettings.starbound_dir))
 
     def launch_server(self):
-        starbound = self.applicationSettings.starbound_dir / 'starbound_server'
+        starbound = exe(self.applicationSettings.starbound_dir / 'starbound_server')
         libs = (f"{os.environ.get('LD_LIBRARY_PATH', '')}:"
                 f"{self.applicationSettings.starbound_dir}")
         env = {**os.environ, 'LD_LIBRARY_PATH': libs}
@@ -149,6 +149,12 @@ class Instance:
             except KeyboardInterrupt:
                 # SIGINT gets passed to the process, stops it, and that's fine
                 pass
+
+
+def exe(file: Path) -> Path:
+    if platform.system() == 'Windows':
+        return file.with_suffix('.exe')
+    return file
 
 
 def make_path(path: str, sourcedir: Path, instancedir: Path) -> Path:
