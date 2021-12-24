@@ -215,4 +215,5 @@ def first_time_setup(instances: str, starbound: str):
         "instances_dir": instances,
         "starbound_dir": starbound,
     })
+    file.parent.mkdir(parents=True)
     file.write_text(configuration)

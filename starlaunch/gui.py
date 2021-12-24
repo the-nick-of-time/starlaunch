@@ -3,6 +3,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
 from typing import Callable, Optional
+from pathlib import Path
 
 from starlaunch import lib
 
@@ -249,7 +250,7 @@ class SettingsMenu:
 
 def first_time_setup():
     win = tk.Tk()
-    starbound = filedialog.askdirectory(title="Directory containing starbound executable")
+    starbound = filedialog.askopenfilename(title="Starbound executable", filetypes=[("Starbound", "starbound*")])
     instances = filedialog.askdirectory(title="Directory to put instances in")
-    lib.first_time_setup(instances, starbound)
+    lib.first_time_setup(instances, str(Path(starbound).parent))
     win.destroy()
