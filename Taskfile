@@ -41,7 +41,7 @@ function publish {
 function help {
 	: "Auto-generate list of tasks, including documentation in the form of these noop statements"
 	compgen -A function | while read -r name ; do
-		paste <(printf '%s' "${name}") <(type "$name" | grep -o '^[[:space:]]*:.*$')
+		paste <(printf '%s' "${name}") <(type "$name" | sed -rn 's/^[[:space:]]*: "(.*)";/\1/p')
 	done
 }
 if [[ $# -eq 0 ]] ; then
