@@ -17,7 +17,11 @@ function launch {
 
 function build {
 	: "Build a distributable executable from the program"
-	poetry run pyinstaller --onefile --noconsole --paths=starlaunch --name=StarLaunch starlaunch/main.py
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    make dist/StarLaunch
+  elif [[ "$OSTYPE" == "msys" ]]; then
+    make dist/StarLaunch.exe
+  fi
 }
 
 function clean {
@@ -27,7 +31,7 @@ function clean {
 
 function wheel {
 	: "Build a wheel (and other formats) to distribute my python package"
-	poetry build
+	make "dist/starlaunch-$(poetry version -s)-py3-none-any.whl"
 }
 
 function publish {
