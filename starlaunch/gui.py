@@ -10,7 +10,7 @@ from starlaunch import lib
 
 class Application:
     def __init__(self, model: lib.Application):
-        self.window = tk.Tk()
+        self.window = tk.Tk(className='StarLaunch')
         self.window.title('StarLaunch')
         self.window.wm_protocol('WM_DELETE_WINDOW', self.quit)
         self.model = model
