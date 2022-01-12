@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=StarLaunch
+Exec=${HOME}/.local/bin/StarLaunch
+Icon=${HOME}/.local/share/icons/StarLaunch/icon.plain.svg
+Type=Application
+Categories=Game;
+Keywords=Starbound;

@@ -8,5 +8,11 @@ dist/starlaunch-$(version).tar.gz dist/starlaunch-$(version)-py3-none-any.whl: $
 	poetry build
 
 icon.ico: icon.svg
-	for dim in 16 32 64 256 ; do inkscape --export-filename="icon_$$dim.png" --export-width="$$dim" --export-height="$$dim" $< ; done
-	convert icon_*.png icon.ico
+	for dim in 16 32 64 256 ; do inkscape --export-filename="icon_$$dim.png" --export-width="$$dim" --export-height="$$dim" "$<" ; done
+	convert icon_*.png "$@"
+
+icon.plain.svg: icon.svg
+	inkscape --export-filename="$@" --export-type=svg "$<"
+
+starlaunch.desktop: starlaunch.desktop.template
+	envsubst <$< >$@

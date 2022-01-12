@@ -40,6 +40,19 @@ function publish {
 	poetry publish --username the-nick-of-time
 }
 
+function install {
+  : "Install the program to "
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    make dist/StarLaunch icon.plain.svg starlaunch.desktop
+    mkdir -p ~/.local/bin ~/.local/share/applications/ ~/.local/share/icons/StarLaunch
+    cp dist/StarLaunch ~/.local/bin
+    cp icon.plain.svg ~/.local/share/icons/StarLaunch/
+    cp starlaunch.desktop ~/.local/share/applications
+  elif [[ "$OSTYPE" == "msys" ]]; then
+    echo "Not yet supported" >&2
+  fi
+}
+
 ### /FUNCTIONS GO HERE
 
 function help {

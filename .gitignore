@@ -6,3 +6,5 @@ __pycache__/
 *.spec
 /*.png
 /icon.ico
+/starlaunch.desktop
+/icon.plain.svg
