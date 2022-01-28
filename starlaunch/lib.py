@@ -125,8 +125,9 @@ class Instance:
         libs = (f"{os.environ.get('LD_LIBRARY_PATH', '')}:"
                 f"{self.applicationSettings.starbound_dir}")
         env = {**os.environ, 'LD_LIBRARY_PATH': libs}
-        log = self.location / 'client.log'
-        with TemporaryDirectory() as dirname, log.open('w') as logfile:
+        logfile = self.location / 'client.log'
+        errlogfile = self.location / 'client.error.log'
+        with TemporaryDirectory() as dirname, logfile.open('w') as log, errlogfile.open('w') as err:
             configname = f"{dirname}/sbinit.config"
             with open(configname, 'w') as config:
                 json.dump(self.config_file_contents(dirname), config, indent=2)
@@ -135,7 +136,7 @@ class Instance:
                 json.dump(self.patch_file_contents(), patch)
             subprocess.run([starbound, '-bootconfig', configname], env=env,
                            cwd=str(self.applicationSettings.starbound_dir),
-                           stdout=logfile)
+                           stdout=log, stderr=err)
 
     def launch_server(self):
         starbound = exe(self.applicationSettings.starbound_dir / 'starbound_server')
