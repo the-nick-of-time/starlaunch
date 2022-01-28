@@ -108,6 +108,7 @@ class Instance:
             "assetDirectories": [
                 str(self.applicationSettings.starbound_dir / '../assets'),
                 str(self.mods),
+                tempdir
             ],
             "storageDirectory": str(self.storage)
         }
